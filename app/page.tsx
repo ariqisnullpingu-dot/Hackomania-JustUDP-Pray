@@ -86,58 +86,62 @@ export default function Home() {
         </div>
 
         {/* Heading */}
-        <h1
-          className="text-5xl sm:text-7xl font-black text-center leading-[1] tracking-tight mb-4"
-          style={{ color: "#f0f4ff" }}
+        <div 
+          className="flex flex-col gap-6 text-center items-center"
         >
-          Disaster
-          <br />
-          <span style={{ color: "rgba(147,197,253,0.25)" }}>Aid</span>
-        </h1>
+          <h1
+            className="text-5xl sm:text-7xl font-black text-center leading-[1] tracking-tight mb-4"
+            style={{ color: "#f0f4ff" }}
+          >
+            Disaster
+            <br />
+            <span style={{ color: "rgba(147,197,253,0.25)" }}>Aid</span>
+          </h1>
 
-        <p
-          className="text-sm tracking-[0.2em] uppercase text-center mb-8"
-          style={{ color: "rgb(255, 255, 255)" }}
-        >
-          Emergency Fund Platform
-        </p>
+          <p
+            className="text-sm tracking-[0.2em] uppercase text-center mb-8"
+            style={{ color: "rgb(255, 255, 255)" }}
+          >
+            Emergency Fund Platform
+          </p>
 
-        <p
-          className="text-base text-center max-w-sm leading-relaxed mb-14"
-          style={{ color: "rgba(186,218,255,0.4)" }}
-        >
-          Community-driven disaster relief powered by{" "}
-          <span style={{ color: "rgba(186,218,255,0.75)" }}>Open Payments</span>.
-          Donate to verified disasters or report emergencies in real-time.
-        </p>
+          <p
+            className="text-base text-center max-w-sm leading-relaxed mb-14"
+            style={{ color: "rgba(186,218,255,0.4)" }}
+          >
+            Community-driven disaster relief powered by{" "}
+            <span style={{ color: "rgba(186,218,255,0.75)" }}>Open Payments</span>.
+            Donate to verified disasters or report emergencies in real-time.
+          </p>
 
 
 
-        {/* Role cards */}
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <ActionCard
-            icon={<Heart className="w-5 h-5" style={{ color: "rgba(240,244,255,0.8)" }} />}
-            title="Donate"
-            description="View live disasters on the map and fund verified relief efforts"
-            accentColor="#ef4444"
-            onClick={() => router.push("/map")}
-          />
-          <ActionCard
-            icon={<Camera className="w-5 h-5" style={{ color: "rgba(240,244,255,0.8)" }} />}
-            title="Report"
-            description="Upload evidence for AI verification and trigger instant disbursement"
-            accentColor="#3b82f6"
-            onClick={() => router.push("/report")}
-          />
+          {/* Role cards */}
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ActionCard
+              icon={<Heart className="w-5 h-5" style={{ color: "rgba(240,244,255,0.8)" }} />}
+              title="Donate"
+              description="View live disasters on the map and fund verified relief efforts"
+              accentColor="#ef4444"
+              onClick={() => router.push("/map")}
+            />
+            <ActionCard
+              icon={<Camera className="w-5 h-5" style={{ color: "rgba(240,244,255,0.8)" }} />}
+              title="Report"
+              description="Upload evidence for AI verification and trigger instant disbursement"
+              accentColor="#3b82f6"
+              onClick={() => router.push("/report")}
+            />
+          </div>
+
+          {/* Footer */}
+          <p
+            className="mt-14 text-[11px] text-center tracking-wider"
+            style={{ color: "rgba(147,197,253,0.12)" }}
+          >
+            GDACS · Open Payments · Hackomania 2026
+          </p>
         </div>
-
-        {/* Footer */}
-        <p
-          className="mt-14 text-[11px] text-center tracking-wider"
-          style={{ color: "rgba(147,197,253,0.12)" }}
-        >
-          GDACS · Open Payments · Hackomania 2026
-        </p>
       </div>
     </div>
   );
@@ -184,8 +188,9 @@ function ActionCard({
   return (
     <button
       onClick={onClick}
-      className="group relative text-left w-full p-6 rounded-2xl transition-all duration-300 active:scale-[0.98]"
+      className="group relative flex flex-col gap-1 text-left w-full rounded-2xl transition-all duration-300 active:scale-[0.98]"
       style={{
+        padding: "28px",
         border: "1px solid rgba(80,120,220,0.15)",
         background: "rgba(12,20,45,0.7)",
       }}
@@ -205,7 +210,7 @@ function ActionCard({
       />
 
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center mb-5 transition-colors"
+        className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
         style={{
           border: "1px solid rgba(80,120,220,0.18)",
           background: "rgba(20,35,80,0.6)",
@@ -214,7 +219,7 @@ function ActionCard({
         {icon}
       </div>
 
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between">
         <h3 className="text-base font-bold" style={{ color: "#f0f4ff" }}>
           {title}
         </h3>

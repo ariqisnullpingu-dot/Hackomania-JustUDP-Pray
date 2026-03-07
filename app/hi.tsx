@@ -90,7 +90,7 @@ export default function DisasterPanel({
       <div
         className="relative z-10 flex items-start justify-between gap-3"
         style={{
-          padding: "1em",
+          padding: "16px 20px",
           borderBottom: "1px solid rgba(80,120,220,0.12)",
           borderTop: `2px solid ${alertColor}`,
         }}
@@ -157,12 +157,12 @@ export default function DisasterPanel({
       {/* Body */}
       <div
         className="relative z-10 flex-1 overflow-y-auto space-y-5"
-        style={{ padding: "1em" }}
+        style={{ padding: "20px" }}
       >
         {/* Description */}
         <p
           className="text-sm leading-relaxed"
-          style={{ color: "rgba(186,218,255,0.5)", paddingBottom: "1em" }}
+          style={{ color: "rgba(186,218,255,0.5)" }}
           dangerouslySetInnerHTML={{ __html: p.description }}
         />
 
@@ -170,7 +170,7 @@ export default function DisasterPanel({
         <div style={{ height: "1px", background: "rgba(80,120,220,0.1)" }} />
 
         {/* Details */}
-        <div className="flex flex-col gap-2" style={{ padding: "1em 0" }}>
+        <div className="space-y-4">
           <DetailRow icon={<MapPin className="w-4 h-4" />} label="Location" value={p.country} />
           <DetailRow
             icon={<Calendar className="w-4 h-4" />}
@@ -250,7 +250,7 @@ export default function DisasterPanel({
           onClick={onDonate}
           className="w-full flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98]"
           style={{
-            padding: "0.75em",
+            padding: "12px 16px",
             background: "linear-gradient(135deg, #ef4444 0%, #f97316 100%)",
             color: "#fff",
             boxShadow: "0 4px 24px rgba(239,68,68,0.25)",

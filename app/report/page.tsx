@@ -242,302 +242,314 @@ export default function ReportPage() {
       </div>
 
       <div className="relative min-h-screen w-full bg-[#050507] text-white flex flex-col items-center justify-center">
-        {/* Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-black">
-            Report a Disaster
-          </h1>
-          <p className="mt-3 text-sm text-gray-400">
-            Upload evidence for AI verification and instant aid disbursement
-          </p>
-        </div>
+        <div className="flex flex-col gap-6 ">
+          {/* Title */}
+          <div className="text-center flex flex-col gap-2">
+            <h1 className="text-3xl sm:text-4xl font-black">
+              Report a Disaster
+            </h1>
+            <p className="mt-3 text-sm text-gray-400">
+              Upload evidence for AI verification and instant aid disbursement
+            </p>
+          </div>
 
-        {/* Stage 1: Upload */}
-        {stage === "upload" && (
-          <div className="space-y-5 animate-fade-in">
-            {/* Preview area */}
-            {preview && (
-              <div className="relative rounded-2xl overflow-hidden border border-gray-700/50 bg-gray-900/50">
-                {file?.type.startsWith("video/") ? (
-                  <video
-                    src={preview}
-                    className="w-full max-h-72 object-contain bg-black"
-                    controls
-                  />
-                ) : (
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="w-full max-h-72 object-contain bg-black"
-                  />
-                )}
-                <div className="px-4 py-2.5 border-t border-gray-700/50 flex items-center justify-between">
-                  <span className="text-xs text-gray-400 truncate">{file?.name}</span>
-                  <button
-                    onClick={() => { setFile(null); setPreview(null); }}
-                    className="text-xs text-orange-400 hover:text-orange-300 font-medium"
+          {/* Stage 1: Upload */}
+          {stage === "upload" && (
+            <div className="space-y-5 animate-fade-in">
+              {/* Preview area */}
+              {preview && (
+                <div className="relative rounded-2xl overflow-hidden border border-gray-700/50 bg-gray-900/50">
+                  {file?.type.startsWith("video/") ? (
+                    <video
+                      src={preview}
+                      className="w-full max-h-72 object-contain bg-black"
+                      controls
+                    />
+                  ) : (
+                    <img
+                      src={preview}
+                      alt="Preview"
+                      className="w-full max-h-72 object-contain bg-black"
+                    />
+                  )}
+                  <div 
+                    className="px-4 py-2.5 border-t border-gray-700/50 flex items-center justify-between"
+                    style={{ padding: "0.5em" }}
                   >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Capture buttons */}
-            {!preview && (
-              <div className="grid grid-cols-2 gap-3">
-                <CameraCapture onCapture={handleFileSelect} />
-                <FileUpload onFileSelect={handleFileSelect} />
-              </div>
-            )}
-
-            {/* Location status */}
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50">
-              <MapPin className="w-5 h-5 text-orange-400 shrink-0" />
-              <div className="flex-1 min-w-0">
-                {locationLoading ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                    <span className="text-sm text-gray-400">Getting your location...</span>
-                  </div>
-                ) : location ? (
-                  <div>
-                    <span className="text-sm text-gray-300">
-                      {locationName || "Location captured"}
-                    </span>
-                    {locationName && (
-                      <span className="text-xs text-gray-500 ml-2">
-                        {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <span className="text-sm text-red-400">{locationError || "Location unavailable"}</span>
+                    <span className="text-xs text-gray-400 truncate">{file?.name}</span>
                     <button
-                      onClick={requestLocation}
-                      className="text-xs text-orange-400 hover:text-orange-300 ml-2"
+                      onClick={() => { setFile(null); setPreview(null); }}
+                      className="text-xs text-orange-400 hover:text-orange-300 font-medium"
                     >
-                      Retry
+                      Remove
                     </button>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Submit */}
-            <button
-              onClick={handleVerify}
-              disabled={!file || !location}
-              className="w-full flex items-center justify-center gap-2.5 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 disabled:opacity-30 disabled:cursor-not-allowed text-white font-semibold text-base transition-all active:scale-[0.98] shadow-lg shadow-orange-500/20"
-            >
-              <Send className="w-5 h-5" />
-              Verify Disaster
-            </button>
-          </div>
-        )}
-
-        {/* Stage 2: Verifying */}
-        {stage === "verifying" && (
-          <div className="space-y-8 animate-fade-in">
-            {/* Preview thumbnail */}
-            <div className="flex items-center gap-4 px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50">
-              {preview && (
-                <img
-                  src={preview}
-                  alt="Uploaded"
-                  className="w-14 h-14 rounded-lg object-cover shrink-0"
-                />
-              )}
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-300 truncate">
-                  {file?.name}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {locationName || (location
-                    ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
-                    : "No location")}
-                </p>
-              </div>
-            </div>
-
-            <VerificationSteps steps={steps} />
-          </div>
-        )}
-
-        {/* Stage 3: Result */}
-        {stage === "result" && verifyResult && (
-          <div className="space-y-6 animate-fade-in">
-            {/* Verdict banner */}
-            <div
-              className={`flex items-center gap-4 px-5 py-4 rounded-2xl border ${verifyResult.verified
-                ? "bg-green-500/[0.08] border-green-500/30"
-                : "bg-red-500/[0.08] border-red-500/30"
-                }`}
-            >
-              {verifyResult.verified ? (
-                <CheckCircle className="w-8 h-8 text-green-400 shrink-0" />
-              ) : (
-                <XCircle className="w-8 h-8 text-red-400 shrink-0" />
-              )}
-              <div>
-                <h3
-                  className={`text-lg font-bold ${verifyResult.verified ? "text-green-300" : "text-red-300"
-                    }`}
-                >
-                  {verifyResult.verified ? "Disaster Verified" : "Not Verified"}
-                </h3>
-                <p className="text-sm text-gray-400 mt-0.5">
-                  {verifyResult.reason}
-                </p>
-              </div>
-            </div>
-
-            {/* Details */}
-            <div className="space-y-3">
-              <DetailRow
-                icon={<AlertTriangle className="w-4 h-4 text-orange-400" />}
-                label="Type"
-                value={verifyResult.disasterType}
-              />
-              <DetailRow
-                icon={<ImageIcon className="w-4 h-4 text-blue-400" />}
-                label="AI Confidence"
-                value={`${verifyResult.confidence}%`}
-              />
-              <DetailRow
-                icon={<FileText className="w-4 h-4 text-gray-400" />}
-                label="AI Description"
-                value={verifyResult.aiDescription}
-              />
-              {verifyResult.gdacsEvents.length > 0 && (
-                <DetailRow
-                  icon={<MapPin className="w-4 h-4 text-rose-400" />}
-                  label="Nearby Events"
-                  value={verifyResult.gdacsEvents
-                    .map((e) => `${e.name} (${e.distance_km}km)`)
-                    .join(", ")}
-                />
-              )}
-            </div>
-
-            {/* Disbursement section */}
-            {verifyResult.verified && !disburseResult && (
-              <div className="space-y-4 pt-2">
-                <div className="h-px bg-gradient-to-r from-transparent via-gray-700/60 to-transparent" />
-                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50">
-                  <Building2 className="w-5 h-5 text-amber-400 shrink-0" />
-                  <div>
-                    <p className="text-xs text-gray-500">Nearest Committee</p>
-                    <p className="text-sm text-gray-200 font-medium">
-                      {verifyResult.nearestCommittee}
-                    </p>
-                  </div>
                 </div>
-                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50">
-                  <DollarSign className="w-5 h-5 text-green-400 shrink-0" />
-                  <div>
-                    <p className="text-xs text-gray-500">Recommended Disbursement</p>
-                    <p className="text-sm text-gray-200 font-medium">
-                      ${verifyResult.recommendedAmount.toFixed(2)} USD
-                    </p>
-                  </div>
-                </div>
+              )}
 
-                <button
-                  onClick={handleDisburse}
-                  disabled={disbursing}
-                  className="w-full flex items-center justify-center gap-2.5 py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 disabled:opacity-60 text-white font-semibold text-base transition-all active:scale-[0.98] shadow-lg shadow-green-500/20"
-                >
-                  {disbursing ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Sending via Open Payments...
-                    </>
+              {/* Capture buttons */}
+              {!preview && (
+                <div className="grid grid-cols-2 gap-3">
+                  <CameraCapture onCapture={handleFileSelect} />
+                  <FileUpload onFileSelect={handleFileSelect} />
+                </div>
+              )}
+
+              {/* Location status */}
+              <div 
+                className="flex items-center gap-3px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50"
+                style={{ margin: "0.25em" }}
+              >
+                <MapPin className="w-5 h-5 text-orange-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  {locationLoading ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                      <span className="text-sm text-gray-400">Getting your location...</span>
+                    </div>
+                  ) : location ? (
+                    <div>
+                      <span className="text-sm text-gray-300">
+                        {locationName || "Location captured"}
+                      </span> &nbsp;
+                      {locationName && (
+                        <span className="text-xs text-gray-500 ml-2">
+                          {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                        </span>
+                      )}
+                    </div>
                   ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      Disburse Funds Now
-                    </>
+                    <div>
+                      <span className="text-sm text-red-400">{locationError || "Location unavailable"}</span>
+                      <button
+                        onClick={requestLocation}
+                        className="text-sm text-orange-400 hover:text-orange-300"
+                        style={{ marginLeft: "0.25em" }}
+                      >
+                        Retry
+                      </button>
+                    </div>
                   )}
-                </button>
+                </div>
               </div>
-            )}
 
-            {/* Disbursement result */}
-            {disburseResult && (
+              {/* Submit */}
+              <button
+                onClick={handleVerify}
+                disabled={!file || !location}
+                className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 disabled:opacity-30 disabled:cursor-not-allowed text-white font-semibold text-base transition-all active:scale-[0.98] shadow-lg shadow-orange-500/20"
+                style={{ padding: "0.25em", margin: "1em 0" }}
+              >
+                <Send className="w-5 h-5" />
+                Verify Disaster
+              </button>
+            </div>
+          )}
+
+          {/* Stage 2: Verifying */}
+          {stage === "verifying" && (
+            <div className="space-y-8 animate-fade-in">
+              {/* Preview thumbnail */}
+              <div className="flex items-center gap-4 px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50">
+                {preview && (
+                  <img
+                    src={preview}
+                    alt="Uploaded"
+                    className="w-14 h-14 rounded-lg object-cover shrink-0"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-300 truncate">
+                    {file?.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {locationName || (location
+                      ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
+                      : "No location")}
+                  </p>
+                </div>
+              </div>
+
+              <VerificationSteps steps={steps} />
+            </div>
+          )}
+
+          {/* Stage 3: Result */}
+          {stage === "result" && verifyResult && (
+            <div className="flex flex-col gap-5 animate-fade-in">
+              {/* Verdict banner */}
               <div
-                className={`px-5 py-5 rounded-2xl border space-y-3 ${disburseResult.success
+                className={`flex items-center gap-4 rounded-2xl border ${verifyResult.verified
                   ? "bg-green-500/[0.08] border-green-500/30"
                   : "bg-red-500/[0.08] border-red-500/30"
                   }`}
+                style={{ padding: "0.75em" }}
               >
-                <div className="flex items-center gap-3">
-                  {disburseResult.success ? (
-                    <CheckCircle className="w-6 h-6 text-green-400" />
-                  ) : (
-                    <XCircle className="w-6 h-6 text-red-400" />
-                  )}
+                {verifyResult.verified ? (
+                  <CheckCircle className="w-8 h-8 text-green-400 shrink-0" />
+                ) : (
+                  <XCircle className="w-8 h-8 text-red-400 shrink-0" />
+                )}
+                <div>
                   <h3
-                    className={`font-bold ${disburseResult.success ? "text-green-300" : "text-red-300"
+                    className={`text-lg font-bold ${verifyResult.verified ? "text-green-300" : "text-red-300"
                       }`}
                   >
-                    {disburseResult.success
-                      ? "Funds Disbursed Successfully"
-                      : "Disbursement Failed"}
+                    {verifyResult.verified ? "Disaster Verified" : "Not Verified"}
                   </h3>
+                  <p className="text-sm text-gray-400 mt-0.5">
+                    {verifyResult.reason}
+                  </p>
                 </div>
-                {disburseResult.success && (
-                  <div className="space-y-1.5 text-sm">
-                    <p className="text-gray-400">
-                      <span className="text-gray-500">Amount:</span>{" "}
-                      <span className="text-white font-medium">
-                        {disburseResult.amount}
-                      </span>
-                    </p>
-                    <p className="text-gray-400">
-                      <span className="text-gray-500">Recipient:</span>{" "}
-                      <span className="text-white font-medium">
-                        {disburseResult.committee}
-                      </span>
-                    </p>
-                    <p className="text-gray-400">
-                      <span className="text-gray-500">Transaction ID:</span>{" "}
-                      <span className="text-white font-mono text-xs">
-                        {disburseResult.transactionId}
-                      </span>
-                    </p>
-                  </div>
-                )}
-                {disburseResult.error && (
-                  <p className="text-sm text-red-400">{disburseResult.error}</p>
+              </div>
+
+              {/* Details */}
+              <div className="space-y-3">
+                <DetailRow
+                  icon={<AlertTriangle className="w-4 h-4 text-orange-400" />}
+                  label="Type"
+                  value={verifyResult.disasterType}
+                />
+                <DetailRow
+                  icon={<ImageIcon className="w-4 h-4 text-blue-400" />}
+                  label="AI Confidence"
+                  value={`${verifyResult.confidence}%`}
+                />
+                <DetailRow
+                  icon={<FileText className="w-4 h-4 text-gray-400" />}
+                  label="AI Description"
+                  value={verifyResult.aiDescription}
+                />
+                {verifyResult.gdacsEvents.length > 0 && (
+                  <DetailRow
+                    icon={<MapPin className="w-4 h-4 text-rose-400" />}
+                    label="Nearby Events"
+                    value={verifyResult.gdacsEvents
+                      .map((e) => `${e.name} (${e.distance_km}km)`)
+                      .join(", ")}
+                  />
                 )}
               </div>
-            )}
 
-            {/* Back / Report Another */}
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => router.push("/")}
-                className="flex-1 py-3 rounded-xl bg-gray-800/60 border border-gray-700/50 text-gray-300 hover:text-white hover:bg-gray-700/60 text-sm font-medium transition-colors"
-              >
-                Back to Home
-              </button>
-              <button
-                onClick={() => {
-                  setStage("upload");
-                  setFile(null);
-                  setPreview(null);
-                  setVerifyResult(null);
-                  setDisburseResult(null);
-                }}
-                className="flex-1 py-3 rounded-xl bg-gray-800/60 border border-gray-700/50 text-gray-300 hover:text-white hover:bg-gray-700/60 text-sm font-medium transition-colors"
-              >
-                Report Another
-              </button>
+              {/* Disbursement section */}
+              {verifyResult.verified && !disburseResult && (
+                <div className="space-y-4 pt-2">
+                  <div className="h-px bg-gradient-to-r from-transparent via-gray-700/60 to-transparent" />
+                  <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50">
+                    <Building2 className="w-5 h-5 text-amber-400 shrink-0" />
+                    <div>
+                      <p className="text-xs text-gray-500">Nearest Committee</p>
+                      <p className="text-sm text-gray-200 font-medium">
+                        {verifyResult.nearestCommittee}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50">
+                    <DollarSign className="w-5 h-5 text-green-400 shrink-0" />
+                    <div>
+                      <p className="text-xs text-gray-500">Recommended Disbursement</p>
+                      <p className="text-sm text-gray-200 font-medium">
+                        ${verifyResult.recommendedAmount.toFixed(2)} USD
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleDisburse}
+                    disabled={disbursing}
+                    className="w-full flex items-center justify-center gap-2.5 py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 disabled:opacity-60 text-white font-semibold text-base transition-all active:scale-[0.98] shadow-lg shadow-green-500/20"
+                  >
+                    {disbursing ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Sending via Open Payments...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5" />
+                        Disburse Funds Now
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Disbursement result */}
+              {disburseResult && (
+                <div
+                  className={`px-5 py-5 rounded-2xl border space-y-3 ${disburseResult.success
+                    ? "bg-green-500/[0.08] border-green-500/30"
+                    : "bg-red-500/[0.08] border-red-500/30"
+                    }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {disburseResult.success ? (
+                      <CheckCircle className="w-6 h-6 text-green-400" />
+                    ) : (
+                      <XCircle className="w-6 h-6 text-red-400" />
+                    )}
+                    <h3
+                      className={`font-bold ${disburseResult.success ? "text-green-300" : "text-red-300"
+                        }`}
+                    >
+                      {disburseResult.success
+                        ? "Funds Disbursed Successfully"
+                        : "Disbursement Failed"}
+                    </h3>
+                  </div>
+                  {disburseResult.success && (
+                    <div className="space-y-1.5 text-sm">
+                      <p className="text-gray-400">
+                        <span className="text-gray-500">Amount:</span>{" "}
+                        <span className="text-white font-medium">
+                          {disburseResult.amount}
+                        </span>
+                      </p>
+                      <p className="text-gray-400">
+                        <span className="text-gray-500">Recipient:</span>{" "}
+                        <span className="text-white font-medium">
+                          {disburseResult.committee}
+                        </span>
+                      </p>
+                      <p className="text-gray-400">
+                        <span className="text-gray-500">Transaction ID:</span>{" "}
+                        <span className="text-white font-mono text-xs">
+                          {disburseResult.transactionId}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                  {disburseResult.error && (
+                    <p className="text-sm text-red-400">{disburseResult.error}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Back / Report Another */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => router.push("/")}
+                  className="flex-1 rounded-xl bg-gray-800/60 border border-gray-700/50 text-gray-300 hover:text-white hover:bg-gray-700/60 text-sm font-medium transition-colors"
+                  style={{ padding: "0.25em 0" }}
+                >
+                  Back to Home
+                </button>
+                <button
+                  onClick={() => {
+                    setStage("upload");
+                    setFile(null);
+                    setPreview(null);
+                    setVerifyResult(null);
+                    setDisburseResult(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-gray-800/60 border border-gray-700/50 text-gray-300 hover:text-white hover:bg-gray-700/60 text-sm font-medium transition-colors"
+                >
+                  Report Another
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <style jsx>{`
@@ -573,7 +585,10 @@ function DetailRow({
   value: string;
 }) {
   return (
-    <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-gray-900/30 border border-gray-800/30">
+    <div 
+      className="flex items-start gap-3 px-4 py-3 rounded-xl bg-gray-900/30 border border-gray-800/30"
+      style={{ padding: "0.35em 0.5em" }}
+    >
       <div className="shrink-0 mt-0.5">{icon}</div>
       <div className="min-w-0">
         <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>

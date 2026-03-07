@@ -68,6 +68,7 @@ export default function CameraCapture({ onCapture }: CameraCaptureProps) {
             {/* Trigger button */}
             <button
                 onClick={openCamera}
+                style={{ padding: "0.75em" }}
                 className="flex flex-col items-center gap-3 py-8 w-full rounded-2xl border-2 border-dashed border-orange-500/30 bg-orange-500/[0.05] hover:bg-orange-500/[0.1] hover:border-orange-500/50 transition-all cursor-pointer"
             >
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20">

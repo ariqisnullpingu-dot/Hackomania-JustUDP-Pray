@@ -97,7 +97,10 @@ export default function MapPage() {
 
       {/* Top-left header */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-        <div className="bg-gray-900/90 backdrop-blur-md rounded-xl px-4 py-3 border border-gray-700/50 shadow-xl">
+        <div
+          className="flex flex-col gap-1 bg-gray-900/90 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-xl"
+          style={{ padding: "0.5em 0.75em" }}
+        >
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
             <h1 className="text-sm font-bold text-white tracking-wide">
@@ -110,8 +113,13 @@ export default function MapPage() {
         </div>
 
         {stats && (
-          <div className="bg-gray-900/90 backdrop-blur-md rounded-xl px-4 py-3 border border-gray-700/50 shadow-xl">
-            <div className="text-xs text-gray-400 mb-2">Active Events</div>
+          <div
+            className="flex flex-col gap-0.5 bg-gray-900/90 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-xl"
+            style={{ padding: "0.5em 0.75em" }}
+          >
+            <h1 className="text-sm font-bold text-white tracking-wide mb-2">
+              DisasterAid
+            </h1>
             <div className="flex items-center gap-3">
               <StatBadge color="#ef4444" count={stats.red} label="Critical" />
               <StatBadge color="#f97316" count={stats.orange} label="Warning" />
@@ -128,7 +136,8 @@ export default function MapPage() {
       <button
         onClick={fetchDisasters}
         disabled={loading}
-        className="absolute top-4 right-4 z-10 p-2.5 bg-gray-900/90 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-xl text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+        className="absolute top-4 right-4 z-10 bg-gray-900/90 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-xl text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+        style={{ padding: "10px" }}
         title="Refresh data"
       >
         <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />

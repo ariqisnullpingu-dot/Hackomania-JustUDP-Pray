@@ -31,27 +31,33 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative bg-gray-900 border border-gray-700/50 rounded-2xl p-8 max-w-md w-full text-center space-y-4 animate-modal-in">
-          <div className="mx-auto w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
+        <div 
+          className="relative bg-gray-900 border border-gray-700/50 rounded-2xl max-w-md w-full text-center space-y-4 animate-modal-in"
+          style={{ padding: "1em" }}
+        >
+          <div className="mx-auto w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
             <CheckCircle className="w-8 h-8 text-green-400" />
           </div>
-          <h3 className="text-xl font-semibold text-white">Thank You!</h3>
-          <p className="text-gray-400 text-sm">
-            Your donation of{" "}
-            <span className="text-white font-semibold">${donationAmount}</span>{" "}
-            to support disaster relief for{" "}
-            <span className="text-white font-semibold">{p.name}</span> has been
-            recorded.
-          </p>
-          <p className="text-xs text-gray-500">
-            Payment integration via Open Payments coming soon.
-          </p>
-          <button
-            onClick={onClose}
-            className="mt-4 px-6 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-medium transition-colors"
-          >
-            Close
-          </button>
+          <div className="flex flex-col gap-3 mb-4">
+            <h3 className="text-xl font-semibold text-white">Thank You!</h3>
+            <p className="text-gray-400 text-sm">
+              Your donation of{" "}
+              <span className="text-white font-semibold">${donationAmount}</span>{" "}
+              to support disaster relief for{" "}
+              <span className="text-white font-semibold">{p.name}</span> has been
+              recorded.
+            </p>
+            <p className="text-xs text-gray-500">
+              Payment integration via Open Payments coming soon.
+            </p>
+            <button
+              onClick={onClose}
+              style={{ padding: "0.25em" }}
+              className="rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-medium transition-colors"
+            >
+              Close
+            </button>
+          </div> 
         </div>
       </div>
     );
@@ -60,7 +66,10 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-gray-900 border border-gray-700/50 rounded-t-2xl sm:rounded-2xl w-full max-w-md overflow-hidden animate-modal-in">
+      <div 
+        className="relative flex flex-col gap-3 bg-gray-900 border border-gray-700/50 rounded-t-2xl sm:rounded-2xl w-full max-w-md overflow-hidden animate-modal-in"
+        style={{ padding: "1em" }}
+      >
         {/* Header */}
         <div className="px-6 pt-5 pb-4 flex items-start justify-between gap-3">
           <div>
@@ -80,7 +89,7 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
           </button>
         </div>
 
-        <div className="px-6 pb-6 space-y-5">
+        <div className="px-6 pb-6 space-y-5 flex flex-col gap-4">
           {/* Preset amounts */}
           <div className="grid grid-cols-3 gap-2">
             {PRESET_AMOUNTS.map((amount) => (
@@ -90,7 +99,8 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
                   setSelectedAmount(amount);
                   setIsCustom(false);
                 }}
-                className={`py-3 rounded-xl text-sm font-semibold transition-all ${
+                style={{ padding: "0.35em 0" }}
+                className={`rounded-xl text-sm font-semibold transition-all ${
                   !isCustom && selectedAmount === amount
                     ? "bg-rose-500/20 text-rose-400 ring-1 ring-rose-500/50"
                     : "bg-gray-800 text-gray-300 hover:bg-gray-700"
@@ -117,15 +127,13 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
           {/* Custom amount input */}
           {isCustom && (
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
-                $
-              </span>
               <input
                 type="number"
                 min="1"
                 placeholder="Enter amount"
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
+                style={{ padding: "0.25em 0.75em" }}
                 className="w-full pl-8 pr-4 py-3 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500/50 transition-all"
                 autoFocus
               />
@@ -136,7 +144,8 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
           <button
             onClick={handleSubmit}
             disabled={donationAmount <= 0}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold transition-all active:scale-[0.98] shadow-lg shadow-rose-500/20"
+            style={{ padding: "0.25em 0" }}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold transition-all active:scale-[0.98] shadow-lg shadow-rose-500/20"
           >
             <Heart className="w-5 h-5" />
             {donationAmount > 0

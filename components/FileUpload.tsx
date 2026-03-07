@@ -30,6 +30,7 @@ export default function FileUpload({ onFileSelect, accept = "image/*,video/*" }:
                 onClick={() => inputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
+                style={{ padding: "0.75em" }}
                 className="flex flex-col items-center gap-3 py-8 w-full rounded-2xl border-2 border-dashed border-gray-700 bg-gray-900/30 hover:bg-gray-800/40 hover:border-gray-600 transition-all cursor-pointer"
             >
                 <div className="w-14 h-14 rounded-xl bg-gray-800 flex items-center justify-center">
