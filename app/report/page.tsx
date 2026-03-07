@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Upload,
-  Camera,
   MapPin,
   ArrowLeft,
   Loader2,
@@ -20,6 +18,9 @@ import {
 import VerificationSteps, {
   type VerificationStep,
 } from "@/components/VerificationSteps";
+import CameraCapture from "@/components/CameraCapture";
+import FileUpload from "@/components/FileUpload";
+
 
 type Stage = "upload" | "verifying" | "result";
 
@@ -46,7 +47,6 @@ interface DisbursementResult {
 
 export default function ReportPage() {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [stage, setStage] = useState<Stage>("upload");
   const [file, setFile] = useState<File | null>(null);
@@ -115,19 +115,6 @@ export default function ReportPage() {
     reader.onload = (e) => setPreview(e.target?.result as string);
     reader.readAsDataURL(selectedFile);
   }, []);
-
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && (droppedFile.type.startsWith("image/") || droppedFile.type.startsWith("video/"))) {
-      handleFileSelect(droppedFile);
-    }
-  }
-
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = e.target.files?.[0];
-    if (selected) handleFileSelect(selected);
-  }
 
   function updateStep(id: string, updates: Partial<VerificationStep>) {
     setSteps((prev) =>
@@ -302,55 +289,10 @@ export default function ReportPage() {
             {/* Capture buttons */}
             {!preview && (
               <div className="grid grid-cols-2 gap-3">
-                {/* Camera capture */}
-                <button
-                  onClick={() => {
-                    const input = document.createElement("input");
-                    input.type = "file";
-                    input.accept = "image/*,video/*";
-                    input.capture = "environment";
-                    input.onchange = (e) => {
-                      const f = (e.target as HTMLInputElement).files?.[0];
-                      if (f) handleFileSelect(f);
-                    };
-                    input.click();
-                  }}
-                  className="flex flex-col items-center gap-3 py-8 rounded-2xl border-2 border-dashed border-orange-500/30 bg-orange-500/[0.05] hover:bg-orange-500/[0.1] hover:border-orange-500/50 transition-all cursor-pointer"
-                >
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                    <Camera className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-white">Take Photo</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Use your camera</p>
-                  </div>
-                </button>
-
-                {/* File upload */}
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={handleDrop}
-                  className="flex flex-col items-center gap-3 py-8 rounded-2xl border-2 border-dashed border-gray-700 bg-gray-900/30 hover:bg-gray-800/40 hover:border-gray-600 transition-all cursor-pointer"
-                >
-                  <div className="w-14 h-14 rounded-xl bg-gray-800 flex items-center justify-center">
-                    <Upload className="w-7 h-7 text-gray-400" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-300">Upload File</p>
-                    <p className="text-xs text-gray-500 mt-0.5">JPG, PNG, MP4</p>
-                  </div>
-                </button>
+                <CameraCapture onCapture={handleFileSelect} />
+                <FileUpload onFileSelect={handleFileSelect} />
               </div>
             )}
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,video/*"
-              onChange={handleInputChange}
-              className="hidden"
-            />
 
             {/* Location status */}
             <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50">
@@ -431,11 +373,10 @@ export default function ReportPage() {
           <div className="space-y-6 animate-fade-in">
             {/* Verdict banner */}
             <div
-              className={`flex items-center gap-4 px-5 py-4 rounded-2xl border ${
-                verifyResult.verified
-                  ? "bg-green-500/[0.08] border-green-500/30"
-                  : "bg-red-500/[0.08] border-red-500/30"
-              }`}
+              className={`flex items-center gap-4 px-5 py-4 rounded-2xl border ${verifyResult.verified
+                ? "bg-green-500/[0.08] border-green-500/30"
+                : "bg-red-500/[0.08] border-red-500/30"
+                }`}
             >
               {verifyResult.verified ? (
                 <CheckCircle className="w-8 h-8 text-green-400 shrink-0" />
@@ -444,9 +385,8 @@ export default function ReportPage() {
               )}
               <div>
                 <h3
-                  className={`text-lg font-bold ${
-                    verifyResult.verified ? "text-green-300" : "text-red-300"
-                  }`}
+                  className={`text-lg font-bold ${verifyResult.verified ? "text-green-300" : "text-red-300"
+                    }`}
                 >
                   {verifyResult.verified ? "Disaster Verified" : "Not Verified"}
                 </h3>
@@ -530,11 +470,10 @@ export default function ReportPage() {
             {/* Disbursement result */}
             {disburseResult && (
               <div
-                className={`px-5 py-5 rounded-2xl border space-y-3 ${
-                  disburseResult.success
-                    ? "bg-green-500/[0.08] border-green-500/30"
-                    : "bg-red-500/[0.08] border-red-500/30"
-                }`}
+                className={`px-5 py-5 rounded-2xl border space-y-3 ${disburseResult.success
+                  ? "bg-green-500/[0.08] border-green-500/30"
+                  : "bg-red-500/[0.08] border-red-500/30"
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   {disburseResult.success ? (
@@ -543,9 +482,8 @@ export default function ReportPage() {
                     <XCircle className="w-6 h-6 text-red-400" />
                   )}
                   <h3
-                    className={`font-bold ${
-                      disburseResult.success ? "text-green-300" : "text-red-300"
-                    }`}
+                    className={`font-bold ${disburseResult.success ? "text-green-300" : "text-red-300"
+                      }`}
                   >
                     {disburseResult.success
                       ? "Funds Disbursed Successfully"
