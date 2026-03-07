@@ -22,7 +22,6 @@ export default function PaymentCallbackPage() {
             return;
         }
 
-        // Read continuation data stored by DonateModal before opening the wallet
         const continueToken = localStorage.getItem("op_continueToken");
         const continueUri = localStorage.getItem("op_continueUri");
         const quoteId = localStorage.getItem("op_quoteId");
@@ -38,7 +37,6 @@ export default function PaymentCallbackPage() {
 
         const storedAmount = localStorage.getItem("op_amount");
 
-        // Clean up localStorage
         localStorage.removeItem("op_continueToken");
         localStorage.removeItem("op_continueUri");
         localStorage.removeItem("op_quoteId");
@@ -46,7 +44,6 @@ export default function PaymentCallbackPage() {
         localStorage.removeItem("op_disasterName");
         localStorage.removeItem("op_amount");
 
-        // Finalize the payment
         fetch("/api/payment/finalize", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -55,9 +52,6 @@ export default function PaymentCallbackPage() {
             .then((res) => res.json())
             .then((data) => {
                 if (data.error) throw new Error(data.error);
-                // sentAmount comes back as "0.00 SGD" on the test network
-                // while the payment is still settling — fall back to the amount
-                // the user typed in that case.
                 const settledZero = data.amount && parseFloat(data.amount) === 0;
                 const displayAmount =
                     data.amount && !settledZero

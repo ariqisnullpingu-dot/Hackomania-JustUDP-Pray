@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, Camera, ArrowRight, Shield, Zap, Radio } from "lucide-react";
+import { Heart, Camera, ArrowRight } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
@@ -18,7 +18,6 @@ export default function Home() {
       style={{ background: "#080d18" }}
     >
 
-      {/* Dark navy base gradient — matches AuthKit's rich depth */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -26,7 +25,6 @@ export default function Home() {
         }}
       />
 
-      {/* Subtle grid lines — like AuthKit's faint perspective grid */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -41,7 +39,6 @@ export default function Home() {
         }}
       />
 
-      {/* Noise texture */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -50,7 +47,6 @@ export default function Home() {
         }}
       />
 
-      {/* AuthKit-style narrow bright spotlight from top center */}
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none"
         style={{
@@ -61,7 +57,7 @@ export default function Home() {
         }}
       />
 
-      {/* Wider soft halo behind spotlight */}
+
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none"
         style={{
@@ -119,14 +115,14 @@ export default function Home() {
           {/* Role cards */}
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
             <ActionCard
-              icon={<Heart className="w-5 h-5" style={{ color: "rgba(240,244,255,0.8)" }} />}
+              icon={<Heart className="w-5 h-5" style={{ color: "rgba(255, 255, 255, 0.8)" }} />}
               title="Donate"
               description="View live disasters on the map and fund verified relief efforts"
               accentColor="#ef4444"
               onClick={() => router.push("/map")}
             />
             <ActionCard
-              icon={<Camera className="w-5 h-5" style={{ color: "rgba(240,244,255,0.8)" }} />}
+              icon={<Camera className="w-5 h-5" style={{ color: "rgba(252, 252, 252, 0.8)" }} />}
               title="Claim Aid"
               description="Take a photo for AI-verified instant aid"
               accentColor="#3b82f6"
@@ -134,13 +130,6 @@ export default function Home() {
             />
           </div>
 
-          {/* Footer */}
-          <p
-            className="mt-14 text-[11px] text-center tracking-wider"
-            style={{ color: "rgba(147,197,253,0.12)" }}
-          >
-            GDACS · Open Payments · Hackomania 2026
-          </p>
         </div>
       </div>
     </div>
@@ -228,7 +217,7 @@ function ActionCard({
           style={{ color: "rgba(147,197,253,0.25)" }}
         />
       </div>
-      <p className="text-sm leading-relaxed" style={{ color: "rgba(147,197,253,0.38)" }}>
+      <p className="text-sm leading-relaxed" style={{ color: "rgba(255, 255, 255, 0.58)" }}>
         {description}
       </p>
     </button>
