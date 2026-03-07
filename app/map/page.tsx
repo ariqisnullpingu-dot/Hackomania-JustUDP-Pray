@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import type { DisasterGeoJSON, DisasterFeature } from "@/lib/types";
-import DisasterPanel from "@/app/components/DisasterPanel";
-import DonateModal from "@/app/components/DonateModal";
+import DisasterPanel from "@/components/DisasterPanel";
+import DonateModal from "@/components/DonateModal";
 
-const DisasterMap = dynamic(() => import("@/app/components/DisasterMap"), {
+const DisasterMap = dynamic(() => import("@/components/DisasterMap"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center bg-gray-950">

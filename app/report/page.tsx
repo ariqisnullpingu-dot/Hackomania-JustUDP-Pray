@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import VerificationSteps, {
   type VerificationStep,
-} from "@/app/components/VerificationSteps";
+} from "@/components/VerificationSteps";
 
 type Stage = "upload" | "verifying" | "result";
 

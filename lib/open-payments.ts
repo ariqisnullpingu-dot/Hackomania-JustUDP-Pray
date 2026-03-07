@@ -9,19 +9,24 @@ let clientInstance: AuthenticatedClient | null = null;
 export async function getOpenPaymentsClient(): Promise<AuthenticatedClient> {
   if (clientInstance) return clientInstance;
 
-  const walletAddressUrl = process.env.OP_WALLET_ADDRESS;
-  const privateKey = process.env.OP_PRIVATE_KEY;
-  const keyId = process.env.OP_KEY_ID;
+  const walletAddressUrl = process.env.WALLET_ADDRESS_URL;
+  const privateKey = process.env.PRIVATE_KEY;
+  const keyId = process.env.KEY_ID;
 
   if (!walletAddressUrl || !privateKey || !keyId) {
     throw new Error(
-      "Missing Open Payments configuration. Set OP_WALLET_ADDRESS, OP_PRIVATE_KEY, and OP_KEY_ID."
+      "Missing Open Payments configuration. Set WALLET_ADDRESS_URL, PRIVATE_KEY, and KEY_ID."
     );
   }
 
+  // Handle potential base64 encoding or raw PEM
+  const formattedPrivateKey = privateKey.includes("-----BEGIN")
+    ? privateKey
+    : Buffer.from(privateKey, "base64");
+
   clientInstance = await createAuthenticatedClient({
     walletAddressUrl,
-    privateKey: Buffer.from(privateKey, "base64"),
+    privateKey: formattedPrivateKey,
     keyId,
   });
 
