@@ -1,37 +1,51 @@
+import fs from "fs";
 import {
   createAuthenticatedClient,
   type AuthenticatedClient,
   isPendingGrant,
+  isFinalizedGrant,
 } from "@interledger/open-payments";
+import { randomUUID } from "crypto";
 
-let clientInstance: AuthenticatedClient | null = null;
+const clients: Record<string, AuthenticatedClient> = {};
 
-export async function getOpenPaymentsClient(): Promise<AuthenticatedClient> {
-  if (clientInstance) return clientInstance;
-
-  const walletAddressUrl = process.env.WALLET_ADDRESS_URL;
-  const privateKey = process.env.PRIVATE_KEY;
-  const keyId = process.env.KEY_ID;
-
-  if (!walletAddressUrl || !privateKey || !keyId) {
+function getPrivateKey(filename: string): string {
+  try {
+    return fs.readFileSync(filename, "utf8");
+  } catch {
     throw new Error(
-      "Missing Open Payments configuration. Set WALLET_ADDRESS_URL, PRIVATE_KEY, and KEY_ID."
+      `Could not read ${filename}.`
+    );
+  }
+}
+
+export async function getOpenPaymentsClient(type: "client" | "central" = "client"): Promise<AuthenticatedClient> {
+  if (clients[type]) return clients[type];
+
+  const isClient = type === "client";
+  const walletAddressUrl = isClient
+    ? process.env.CLIENT_WALLET_ADDRESS_URL
+    : process.env.CENTRAL_WALLET_ADDRESS_URL;
+  const keyId = isClient
+    ? process.env.CLIENT_KEY_ID
+    : process.env.CENTRAL_KEY_ID;
+  const keyFilename = isClient ? "wallet.pem" : "central.pem";
+
+  if (!walletAddressUrl || !keyId) {
+    throw new Error(
+      `Missing Open Payments config for ${type}. Set ${isClient ? "CLIENT" : "CENTRAL"}_WALLET_ADDRESS_URL and KEY_ID.`
     );
   }
 
-  // Handle potential base64 encoding or raw PEM
-  const formattedPrivateKey = privateKey.includes("-----BEGIN")
-    ? privateKey
-    : Buffer.from(privateKey, "base64");
-
-  clientInstance = await createAuthenticatedClient({
+  clients[type] = await createAuthenticatedClient({
     walletAddressUrl,
-    privateKey: formattedPrivateKey,
+    privateKey: getPrivateKey(keyFilename),
     keyId,
   });
 
-  return clientInstance;
+  return clients[type];
 }
+
 
 export interface PaymentResult {
   success: boolean;
@@ -41,31 +55,48 @@ export interface PaymentResult {
   error?: string;
 }
 
-export async function sendPayment(
+export interface InitiatePaymentResult {
+  success: boolean;
+  approvalUrl?: string;
+  continueToken?: string;
+  continueUri?: string;
+  quoteId?: string;
+  senderWalletUrl?: string;
+  error?: string;
+}
+
+
+
+export async function initiatePayment(
   recipientWalletUrl: string,
-  amountValue: string,
-  assetCode: string = "USD",
-  assetScale: number = 2
-): Promise<PaymentResult> {
+  amountDollars: number,
+  redirectUri: string = "http://localhost:3000"
+): Promise<InitiatePaymentResult> {
   try {
-    const client = await getOpenPaymentsClient();
+    const client = await getOpenPaymentsClient("client");
+    const centralClient = await getOpenPaymentsClient("central");
 
-    const senderWalletUrl = process.env.OP_WALLET_ADDRESS!;
-    const senderWallet = await client.walletAddress.get({
-      url: senderWalletUrl,
-    });
-    const recipientWallet = await client.walletAddress.get({
-      url: recipientWalletUrl,
-    });
+    const senderWalletUrl = process.env.CLIENT_WALLET_ADDRESS_URL!;
 
-    const incomingGrant = await client.grant.request(
+    const [senderWallet, recipientWallet] = await Promise.all([
+      client.walletAddress.get({ url: senderWalletUrl }),
+      centralClient.walletAddress.get({ url: recipientWalletUrl }),
+    ]);
+
+    const debitAmount = {
+      value: String(Math.round(amountDollars * Math.pow(10, senderWallet.assetScale))),
+      assetCode: senderWallet.assetCode,
+      assetScale: senderWallet.assetScale,
+    };
+
+    const incomingGrant = await centralClient.grant.request(
       { url: recipientWallet.authServer },
       {
         access_token: {
           access: [
             {
               type: "incoming-payment",
-              actions: ["create", "read", "list"],
+              actions: ["create", "read", "complete"],
             },
           ],
         },
@@ -73,21 +104,17 @@ export async function sendPayment(
     );
 
     if (isPendingGrant(incomingGrant)) {
-      return { success: false, error: "Incoming payment grant requires interaction." };
+      return { success: false, error: "Incoming payment grant unexpectedly requires interaction." };
     }
 
-    const incomingPayment = await client.incomingPayment.create(
+    const incomingPayment = await centralClient.incomingPayment.create(
       {
         url: recipientWallet.resourceServer,
         accessToken: incomingGrant.access_token!.value,
       },
       {
         walletAddress: recipientWalletUrl,
-        incomingAmount: {
-          value: amountValue,
-          assetCode,
-          assetScale,
-        },
+        expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
       }
     );
 
@@ -95,18 +122,14 @@ export async function sendPayment(
       { url: senderWallet.authServer },
       {
         access_token: {
-          access: [
-            {
-              type: "quote",
-              actions: ["create", "read"],
-            },
-          ],
+          access: [{ type: "quote", actions: ["create", "read"] }],
         },
       }
     );
 
+
     if (isPendingGrant(quoteGrant)) {
-      return { success: false, error: "Quote grant requires interaction." };
+      return { success: false, error: "Quote grant unexpectedly requires interaction." };
     }
 
     const quote = await client.quote.create(
@@ -118,18 +141,20 @@ export async function sendPayment(
         walletAddress: senderWalletUrl,
         receiver: incomingPayment.id,
         method: "ilp",
+        debitAmount,
       }
     );
 
+    const nonce = randomUUID();
     const outgoingGrant = await client.grant.request(
       { url: senderWallet.authServer },
       {
         access_token: {
           access: [
             {
-              identifier: senderWalletUrl,
+              identifier: senderWallet.id,
               type: "outgoing-payment",
-              actions: ["create", "read"],
+              actions: ["create", "read", "list"],
               limits: {
                 debitAmount: {
                   value: quote.debitAmount.value,
@@ -140,38 +165,97 @@ export async function sendPayment(
             },
           ],
         },
+        interact: {
+          start: ["redirect"],
+          finish: {
+            method: "redirect",
+            uri: redirectUri,
+            nonce,
+          },
+        },
       }
     );
 
-    if (isPendingGrant(outgoingGrant)) {
-      return {
-        success: false,
-        error: "Outgoing payment grant requires user interaction.",
-      };
+    if (!isPendingGrant(outgoingGrant)) {
+
+      if (isFinalizedGrant(outgoingGrant)) {
+        if (!outgoingGrant.access_token) throw new Error("No access token on finalized grant.");
+        const outgoingPayment = await client.outgoingPayment.create(
+          {
+            url: senderWallet.resourceServer,
+            accessToken: outgoingGrant.access_token.value,
+          },
+          { walletAddress: senderWalletUrl, quoteId: quote.id }
+        );
+        return {
+          success: true,
+          continueToken: outgoingPayment.id,
+          quoteId: quote.id,
+          senderWalletUrl,
+        };
+      }
+      return { success: false, error: "Unexpected grant state." };
     }
 
+    return {
+      success: true,
+      approvalUrl: outgoingGrant.interact.redirect,
+      continueToken: outgoingGrant.continue.access_token.value,
+      continueUri: outgoingGrant.continue.uri,
+      quoteId: quote.id,
+      senderWalletUrl,
+    };
+  } catch (error: any) {
+    console.error("initiatePayment error:", error);
+    return { success: false, error: error.message || "Failed to initiate payment." };
+  }
+}
+
+
+export async function finalizePayment(
+  continueToken: string,
+  continueUri: string,
+  interactRef: string,
+  senderWalletUrl: string,
+  quoteId: string
+): Promise<PaymentResult> {
+  try {
+    const client = await getOpenPaymentsClient();
+    const grant = await client.grant.continue(
+      { accessToken: continueToken, url: continueUri },
+      { interact_ref: interactRef }
+    );
+
+    if (!isFinalizedGrant(grant)) {
+      return { success: false, error: "Grant was not approved by the user." };
+    }
+
+
+    const senderWallet = await client.walletAddress.get({ url: senderWalletUrl });
+
+
+    if (!grant.access_token) throw new Error("No access token on finalized grant.");
     const outgoingPayment = await client.outgoingPayment.create(
       {
         url: senderWallet.resourceServer,
-        accessToken: outgoingGrant.access_token!.value,
+        accessToken: grant.access_token.value,
       },
-      {
-        walletAddress: senderWalletUrl,
-        quoteId: quote.id,
-      }
+      { walletAddress: senderWalletUrl, quoteId }
     );
+
+    const sent = outgoingPayment.sentAmount;
+    const displayAmount = sent
+      ? `${(parseInt(sent.value) / Math.pow(10, sent.assetScale)).toFixed(sent.assetScale)} ${sent.assetCode}`
+      : undefined;
 
     return {
       success: true,
       transactionId: outgoingPayment.id,
-      amount: `${(parseInt(amountValue) / Math.pow(10, assetScale)).toFixed(assetScale)} ${assetCode}`,
-      currency: assetCode,
+      amount: displayAmount,
+      currency: sent?.assetCode,
     };
   } catch (error: any) {
-    console.error("Open Payments error:", error);
-    return {
-      success: false,
-      error: error.message || "Payment failed",
-    };
+    console.error("finalizePayment error:", error);
+    return { success: false, error: error.message || "Failed to finalize payment." };
   }
 }
