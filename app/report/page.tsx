@@ -241,14 +241,11 @@ export default function ReportPage() {
         </button>
       </div>
 
-      <div className="relative z-10 px-4 sm:px-6 pb-16 max-w-lg mx-auto">
+      <div className="relative min-h-screen w-full bg-[#050507] text-white flex flex-col items-center justify-center">
         {/* Title */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-black">
-            Report a{" "}
-            <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
-              Disaster
-            </span>
+            Report a Disaster
           </h1>
           <p className="mt-3 text-sm text-gray-400">
             Upload evidence for AI verification and instant aid disbursement
