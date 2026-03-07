@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, Camera, ArrowRight } from "lucide-react";
+import { Heart, Camera, ArrowRight, Activity, Users, Shield } from "lucide-react";
+import ActionCard from "@/components/ActionCard";
 
 export default function Home() {
   const router = useRouter();
@@ -82,7 +83,7 @@ export default function Home() {
         </div>
 
         {/* Heading */}
-        <div 
+        <div
           className="flex flex-col gap-6 text-center items-center"
         >
           <h1
@@ -115,14 +116,14 @@ export default function Home() {
           {/* Role cards */}
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
             <ActionCard
-              icon={<Heart className="w-5 h-5" style={{ color: "rgba(255, 255, 255, 0.8)" }} />}
+              icon={<Heart className="w-5 h-5 text-white/80" />}
               title="Donate"
               description="View live disasters on the map and fund verified relief efforts"
               accentColor="#ef4444"
-              onClick={() => router.push("/map")}
+              onClick={() => router.push("/donate")}
             />
             <ActionCard
-              icon={<Camera className="w-5 h-5" style={{ color: "rgba(252, 252, 252, 0.8)" }} />}
+              icon={<Camera className="w-5 h-5 text-white/80" />}
               title="Claim Aid"
               description="Take a photo for AI-verified instant aid"
               accentColor="#3b82f6"
@@ -133,93 +134,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-  );
-}
-
-function StatItem({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
-  return (
-    <div className="flex-1 flex flex-col items-center gap-1 py-4">
-      <div
-        className="flex items-center gap-1.5"
-        style={{ color: "rgba(147,197,253,0.35)" }}
-      >
-        {icon}
-        <span
-          className="text-xs font-bold tracking-wide"
-          style={{ color: "rgba(186,218,255,0.55)" }}
-        >
-          {value}
-        </span>
-      </div>
-      <span
-        className="text-[9px] uppercase tracking-widest"
-        style={{ color: "rgba(147,197,253,0.2)" }}
-      >
-        {label}
-      </span>
-    </div>
-  );
-}
-
-function ActionCard({
-  icon,
-  title,
-  description,
-  accentColor,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  accentColor: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="group relative flex flex-col gap-1 text-left w-full rounded-2xl transition-all duration-300 active:scale-[0.98]"
-      style={{
-        padding: "28px",
-        border: "1px solid rgba(80,120,220,0.15)",
-        background: "rgba(12,20,45,0.7)",
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.background = "rgba(18,32,70,0.85)";
-        (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(100,150,255,0.25)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.background = "rgba(12,20,45,0.7)";
-        (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(80,120,220,0.15)";
-      }}
-    >
-      {/* Accent dot */}
-      <div
-        className="absolute top-4 right-4 w-1.5 h-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ backgroundColor: accentColor }}
-      />
-
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-        style={{
-          border: "1px solid rgba(80,120,220,0.18)",
-          background: "rgba(20,35,80,0.6)",
-        }}
-      >
-        {icon}
-      </div>
-
-      <div className="flex items-center justify-between">
-        <h3 className="text-base font-bold" style={{ color: "#f0f4ff" }}>
-          {title}
-        </h3>
-        <ArrowRight
-          className="w-4 h-4 group-hover:translate-x-0.5 transition-all duration-300"
-          style={{ color: "rgba(147,197,253,0.25)" }}
-        />
-      </div>
-      <p className="text-sm leading-relaxed" style={{ color: "rgba(255, 255, 255, 0.58)" }}>
-        {description}
-      </p>
-    </button>
   );
 }
