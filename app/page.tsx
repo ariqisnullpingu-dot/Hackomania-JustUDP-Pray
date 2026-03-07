@@ -127,8 +127,8 @@ export default function Home() {
             />
             <ActionCard
               icon={<Camera className="w-5 h-5" style={{ color: "rgba(240,244,255,0.8)" }} />}
-              title="Report"
-              description="Upload evidence for AI verification and trigger instant disbursement"
+              title="Claim Aid"
+              description="Take a photo for AI-verified instant aid"
               accentColor="#3b82f6"
               onClick={() => router.push("/report")}
             />
