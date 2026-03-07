@@ -62,9 +62,150 @@ export interface InitiatePaymentResult {
   continueUri?: string;
   quoteId?: string;
   senderWalletUrl?: string;
+  isRecurring?: boolean;
   error?: string;
 }
 
+
+
+export async function initiateRecurringPayment(
+  recipientWalletUrl: string,
+  amountDollars: number,
+  repetitions: number = 12,
+  period: string = "P1M",
+  redirectUri: string = "http://localhost:3000"
+): Promise<InitiatePaymentResult> {
+  try {
+    const client = await getOpenPaymentsClient("client");
+    const centralClient = await getOpenPaymentsClient("central");
+
+    const senderWalletUrl = process.env.CLIENT_WALLET_ADDRESS_URL!;
+
+    const [senderWallet, recipientWallet] = await Promise.all([
+      client.walletAddress.get({ url: senderWalletUrl }),
+      centralClient.walletAddress.get({ url: recipientWalletUrl }),
+    ]);
+
+    const incomingGrant = await centralClient.grant.request(
+      { url: recipientWallet.authServer },
+      {
+        access_token: {
+          access: [{ type: "incoming-payment", actions: ["create", "read", "complete"] }],
+        },
+      }
+    );
+    if (isPendingGrant(incomingGrant)) {
+      return { success: false, error: "Incoming payment grant unexpectedly requires interaction." };
+    }
+
+
+    const receiveValue = String(
+      Math.round(amountDollars * Math.pow(10, recipientWallet.assetScale))
+    );
+    const incomingPayment = await centralClient.incomingPayment.create(
+      {
+        url: recipientWallet.resourceServer,
+        accessToken: incomingGrant.access_token!.value,
+      },
+      {
+        walletAddress: recipientWalletUrl,
+        incomingAmount: {
+          value: receiveValue,
+          assetCode: recipientWallet.assetCode,
+          assetScale: recipientWallet.assetScale,
+        },
+        expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+      }
+    );
+
+    const quoteGrant = await client.grant.request(
+      { url: senderWallet.authServer },
+      {
+        access_token: {
+          access: [{ type: "quote", actions: ["create", "read"] }],
+        },
+      }
+    );
+    if (isPendingGrant(quoteGrant)) {
+      return { success: false, error: "Quote grant unexpectedly requires interaction." };
+    }
+
+    const quote = await client.quote.create(
+      {
+        url: senderWallet.resourceServer,
+        accessToken: quoteGrant.access_token!.value,
+      },
+      {
+        walletAddress: senderWalletUrl,
+        receiver: incomingPayment.id,
+        method: "ilp",
+      }
+    );
+
+    // for my reference R3/2025-10-03T23:25:00Z/P1M
+    const startISO = new Date().toISOString();
+    const interval = `R${repetitions}/${startISO}/${period}`;
+
+
+    const nonce = randomUUID();
+    const outgoingGrant = await client.grant.request(
+      { url: senderWallet.authServer },
+      {
+        access_token: {
+          access: [
+            {
+              identifier: senderWallet.id,
+              type: "outgoing-payment",
+              actions: ["create", "read", "list"],
+              limits: {
+                debitAmount: {
+                  value: quote.debitAmount.value,
+                  assetCode: quote.debitAmount.assetCode,
+                  assetScale: quote.debitAmount.assetScale,
+                },
+                interval,
+              },
+            },
+          ],
+        },
+        interact: {
+          start: ["redirect"],
+          finish: {
+            method: "redirect",
+            uri: redirectUri,
+            nonce,
+          },
+        },
+      }
+    );
+    // console.log(outgoingGrant);
+
+    if (!isPendingGrant(outgoingGrant)) {
+      if (isFinalizedGrant(outgoingGrant)) {
+        if (!outgoingGrant.access_token) throw new Error("No access token on finalized grant.");
+        const outgoingPayment = await client.outgoingPayment.create(
+          { url: senderWallet.resourceServer, accessToken: outgoingGrant.access_token.value },
+          { walletAddress: senderWalletUrl, quoteId: quote.id }
+        );
+        return { success: true, continueToken: outgoingPayment.id, quoteId: quote.id, senderWalletUrl, isRecurring: true };
+      }
+      return { success: false, error: "Unexpected grant state." };
+    }
+
+    return {
+      success: true,
+      approvalUrl: outgoingGrant.interact.redirect,
+      continueToken: outgoingGrant.continue.access_token.value,
+      continueUri: outgoingGrant.continue.uri,
+      quoteId: quote.id,
+      senderWalletUrl,
+      isRecurring: true,
+    };
+  } catch (error: any) {
+    console.error("initiateRecurringPayment error:", error);
+    return { success: false, error: error.message || "Failed to initiate recurring payment." };
+  }
+}
 
 
 export async function initiatePayment(

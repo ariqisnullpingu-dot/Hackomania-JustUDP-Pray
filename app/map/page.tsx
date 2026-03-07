@@ -1,12 +1,11 @@
 "use client";
-
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { Loader2, AlertTriangle, RefreshCw, ArrowLeft } from "lucide-react";
 import type { DisasterGeoJSON, DisasterFeature } from "@/lib/types";
 import DisasterPanel from "@/components/DisasterPanel";
 import DonateModal from "@/components/DonateModal";
-
 const DisasterMap = dynamic(() => import("@/components/DisasterMap"), {
   ssr: false,
   loading: () => (
@@ -23,7 +22,6 @@ export default function MapPage() {
   const [selectedFeature, setSelectedFeature] =
     useState<DisasterFeature | null>(null);
   const [showDonateModal, setShowDonateModal] = useState(false);
-
   const fetchDisasters = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -53,17 +51,17 @@ export default function MapPage() {
 
   const stats = data
     ? {
-        total: data.features.length,
-        red: data.features.filter(
-          (f) => f.properties.alertLevel === "Red"
-        ).length,
-        orange: data.features.filter(
-          (f) => f.properties.alertLevel === "Orange"
-        ).length,
-        green: data.features.filter(
-          (f) => f.properties.alertLevel === "Green"
-        ).length,
-      }
+      total: data.features.length,
+      red: data.features.filter(
+        (f) => f.properties.alertLevel === "Red"
+      ).length,
+      orange: data.features.filter(
+        (f) => f.properties.alertLevel === "Orange"
+      ).length,
+      green: data.features.filter(
+        (f) => f.properties.alertLevel === "Green"
+      ).length,
+    }
     : null;
 
   return (
@@ -97,6 +95,13 @@ export default function MapPage() {
 
       {/* Top-left header */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+        <Link
+          href="/"
+          className="flex items-center gap-2 bg-gray-900/90 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-xl text-gray-400 hover:text-white transition-colors group px-3 py-1.5 w-fit"
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+          <span className="text-xs font-semibold">Back to Home</span>
+        </Link>
         <div
           className="flex flex-col gap-1 bg-gray-900/90 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-xl"
           style={{ padding: "0.5em 0.75em" }}

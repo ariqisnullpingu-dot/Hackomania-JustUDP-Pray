@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   MapPin,
   ArrowLeft,
@@ -254,14 +255,14 @@ export default function ReportPage() {
       <div className="fixed top-0 left-1/2 -translate-x-1/2 pointer-events-none" style={{ width: "900px", height: "500px", background: "radial-gradient(ellipse at top, rgba(40,80,200,0.1) 0%, rgba(20,50,140,0.05) 45%, transparent 70%)" }} />
 
       {/* Header */}
-      <div className="relative z-10 px-4 sm:px-6 pt-6 pb-4">
-        <button
-          onClick={() => router.push("/")}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+        <Link
+          href="/"
+          className="flex items-center gap-2 bg-gray-900/90 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-xl text-gray-400 hover:text-white transition-colors group px-3 py-1.5 w-fit"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
+          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+          <span className="text-xs font-semibold">Back to Home</span>
+        </Link>
       </div>
 
       <div className="relative min-h-screen w-full text-white flex flex-col items-center justify-center">

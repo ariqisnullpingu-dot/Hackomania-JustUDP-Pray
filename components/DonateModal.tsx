@@ -27,6 +27,7 @@ interface DonateModalProps {
 
 export default function DonateModal({ feature, onClose }: DonateModalProps) {
   const [step, setStep] = useState<Step>("amount");
+  const [isMonthly, setIsMonthly] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(25);
   const [customAmount, setCustomAmount] = useState("");
   const [isCustom, setIsCustom] = useState(false);
@@ -40,20 +41,25 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
   const donationAmount = isCustom ? Number(customAmount) || 0 : selectedAmount || 0;
   const recipientWalletUrl = REAL_WALLET;
 
-  // ── Phase 1: call /api/payment/initiate ─────────────────────────────────────
   async function handleDonate() {
     if (donationAmount <= 0) return;
     setLoading(true);
 
-
     try {
-      const res = await fetch("/api/payment/initiate", {
+      const endpoint = isMonthly ? "/api/payment/subscribe" : "/api/payment/initiate";
+      const body: Record<string, unknown> = {
+        recipientWalletUrl,
+        amountDollars: donationAmount,
+      };
+      if (isMonthly) {
+        body.months = 12;       // 12 monthly payments
+        body.periodMonths = 1;  // every 1 month
+      }
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipientWalletUrl,
-          amountDollars: donationAmount,
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -61,22 +67,19 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
         throw new Error(data.error || "Failed to initiate payment.");
       }
 
-      // If the grant was auto-approved (test env edge case), skip ahead
       if (!data.approvalUrl && data.continueToken?.startsWith("https://")) {
-        // transactionId returned directly
         setResult({ transactionId: data.continueToken });
         setStep("success");
         return;
       }
 
-      // Store continuation data in localStorage so the callback page can read
-      // it even if the wallet redirect lands in a different tab.
       localStorage.setItem("op_continueToken", data.continueToken);
       localStorage.setItem("op_continueUri", data.continueUri);
       localStorage.setItem("op_quoteId", data.quoteId);
       localStorage.setItem("op_senderWalletUrl", data.senderWalletUrl);
       localStorage.setItem("op_disasterName", p.name);
       localStorage.setItem("op_amount", String(donationAmount));
+      localStorage.setItem("op_isRecurring", isMonthly ? "1" : "0");
 
       setPendingData(data as PendingData);
       setStep("pending_approval");
@@ -92,7 +95,7 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div 
+      <div
         className="relative flex flex-col gap-3 bg-gray-900 border border-gray-700/50 rounded-t-2xl sm:rounded-2xl w-full max-w-md overflow-hidden animate-modal-in"
         style={{ padding: "1em" }}
       >
@@ -117,12 +120,34 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
             </div>
 
             <div className="px-6 pb-6 space-y-5 flex flex-col gap-4">
+              {/* One-time / Monthly toggle */}
+              <div className="flex rounded-xl overflow-hidden border border-gray-700/60 text-sm font-semibold">
+                <button
+                  onClick={() => setIsMonthly(false)}
+                  className={`flex-1 py-2 transition-all ${!isMonthly
+                    ? "bg-rose-500/20 text-rose-400"
+                    : "bg-gray-800 text-gray-400 hover:text-gray-200"
+                    }`}
+                >
+                  One-time
+                </button>
+                <button
+                  onClick={() => setIsMonthly(true)}
+                  className={`flex-1 py-2 transition-all ${isMonthly
+                    ? "bg-rose-500/20 text-rose-400"
+                    : "bg-gray-800 text-gray-400 hover:text-gray-200"
+                    }`}
+                >
+                  Monthly
+                </button>
+              </div>
+
               <div className="grid grid-cols-3 gap-2">
                 {PRESET_AMOUNTS.map((amount) => (
                   <button
                     key={amount}
                     onClick={() => { setSelectedAmount(amount); setIsCustom(false); }}
-                style={{ padding: "0.35em 0" }}
+                    style={{ padding: "0.35em 0" }}
                     className={`rounded-xl text-sm font-semibold transition-all ${!isCustom && selectedAmount === amount
                       ? "bg-rose-500/20 text-rose-400 ring-1 ring-rose-500/50"
                       : "bg-gray-800 text-gray-300 hover:bg-gray-700"
@@ -160,13 +185,17 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
               <button
                 onClick={handleDonate}
                 disabled={donationAmount <= 0 || loading}
-            style={{ padding: "0.25em 0" }}
+                style={{ padding: "0.25em 0" }}
                 className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold transition-all active:scale-[0.98] shadow-lg shadow-rose-500/20"
               >
                 {loading ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> Preparing…</>
                 ) : (
-                  <><Heart className="w-5 h-5" /> {donationAmount > 0 ? `Donate $${donationAmount}` : "Select an amount"}</>
+                  <><Heart className="w-5 h-5" /> {donationAmount > 0
+                    ? isMonthly
+                      ? `Donate $${donationAmount}/mo × 12`
+                      : `Donate $${donationAmount}`
+                    : "Select an amount"}</>
                 )}
               </button>
 
@@ -194,8 +223,19 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
             <div>
               <h3 className="text-lg font-semibold text-white mb-1">Approve in your wallet</h3>
               <p className="text-sm text-gray-400">
-                Your wallet provider needs to authorise this <span className="text-white font-medium">${donationAmount}</span> payment.
-                Click the button below, approve it, then come back here.
+                {isMonthly ? (
+                  <>
+                    Your wallet needs to authorise a recurring{" "}
+                    <span className="text-white font-medium">${donationAmount}/month × 12</span> grant.
+                    You only approve <strong>once</strong> — payments recur automatically each month.
+                  </>
+                ) : (
+                  <>
+                    Your wallet provider needs to authorise this{" "}
+                    <span className="text-white font-medium">${donationAmount}</span> payment.
+                    Click the button below, approve it, then come back here.
+                  </>
+                )}
               </p>
             </div>
 

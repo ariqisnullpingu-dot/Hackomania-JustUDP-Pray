@@ -10,7 +10,7 @@ export default function PaymentCallbackPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [status, setStatus] = useState<Status>("loading");
-    const [result, setResult] = useState<{ amount?: string; transactionId?: string } | null>(null);
+    const [result, setResult] = useState<{ amount?: string; transactionId?: string; isRecurring?: boolean } | null>(null);
     const [errorMsg, setErrorMsg] = useState("");
 
     useEffect(() => {
@@ -36,6 +36,7 @@ export default function PaymentCallbackPage() {
         }
 
         const storedAmount = localStorage.getItem("op_amount");
+        const isRecurring = localStorage.getItem("op_isRecurring") === "1";
 
         localStorage.removeItem("op_continueToken");
         localStorage.removeItem("op_continueUri");
@@ -43,6 +44,7 @@ export default function PaymentCallbackPage() {
         localStorage.removeItem("op_senderWalletUrl");
         localStorage.removeItem("op_disasterName");
         localStorage.removeItem("op_amount");
+        localStorage.removeItem("op_isRecurring");
 
         fetch("/api/payment/finalize", {
             method: "POST",
@@ -57,7 +59,7 @@ export default function PaymentCallbackPage() {
                     data.amount && !settledZero
                         ? data.amount
                         : storedAmount ? `$${storedAmount}` : undefined;
-                setResult({ amount: displayAmount, transactionId: data.transactionId });
+                setResult({ amount: displayAmount, transactionId: data.transactionId, isRecurring });
                 setStatus("success");
             })
             .catch((err) => {
@@ -103,11 +105,28 @@ export default function PaymentCallbackPage() {
                             <CheckCircle className="w-8 h-8 text-green-400" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-semibold text-white">Donation Sent! 🎉</h1>
+                            <h1 className="text-xl font-semibold text-white">
+                                {result?.isRecurring ? "Monthly Donation Set Up! 🔄" : "Donation Sent! 🎉"}
+                            </h1>
                             <p className="text-sm text-gray-400 mt-2">
-                                {result?.amount
-                                    ? <>Your donation of <span className="text-white font-semibold">{result.amount}</span> has been sent to the relief fund.</>
-                                    : "Your donation has been sent to the relief fund."}
+                                {result?.isRecurring ? (
+                                    <>
+                                        Your{" "}
+                                        <span className="text-white font-semibold">
+                                            {result.amount}/month
+                                        </span>{" "}
+                                        recurring donation has been authorised for 12 months.
+                                        The first payment has been sent — future payments will happen automatically.
+                                    </>
+                                ) : result?.amount ? (
+                                    <>
+                                        Your donation of{" "}
+                                        <span className="text-white font-semibold">{result.amount}</span>{" "}
+                                        has been sent to the relief fund.
+                                    </>
+                                ) : (
+                                    "Your donation has been sent to the relief fund."
+                                )}
                             </p>
                             {result?.transactionId && (
                                 <p className="mt-3 text-xs text-gray-600 break-all">
@@ -115,12 +134,20 @@ export default function PaymentCallbackPage() {
                                 </p>
                             )}
                         </div>
-                        <button
-                            onClick={() => router.push("/map")}
-                            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 text-white font-semibold transition-all"
-                        >
-                            Back to Map
-                        </button>
+                        <div className="flex gap-3 justify-center mt-2">
+                            <button
+                                onClick={() => router.push("/map")}
+                                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 text-white font-semibold transition-all"
+                            >
+                                Back to Map
+                            </button>
+                            <button
+                                onClick={() => router.push("/")}
+                                className="px-6 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white transition-all font-semibold"
+                            >
+                                Home
+                            </button>
+                        </div>
                     </>
                 )}
 
