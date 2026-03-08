@@ -107,8 +107,7 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
               <div>
                 <h3 className="text-lg font-semibold text-white">Donate to Relief</h3>
                 <p className="text-sm text-gray-400 mt-0.5">
-                  {p.name} &middot;{" "}
-                  <span style={{ color: alertColor }}>{EVENT_TYPE_LABELS[p.eventType]}</span>
+                  {p.name}{" "}
                 </p>
               </div>
               <button
@@ -168,15 +167,14 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
               </div>
 
               {isCustom && (
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                <div>
                   <input
                     type="number"
                     min="1"
                     placeholder="Enter amount"
                     value={customAmount}
                     onChange={(e) => setCustomAmount(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500/50 transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 text-center focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500/50 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     autoFocus
                   />
                 </div>
@@ -193,7 +191,7 @@ export default function DonateModal({ feature, onClose }: DonateModalProps) {
                 ) : (
                   <><Heart className="w-5 h-5" /> {donationAmount > 0
                     ? isMonthly
-                      ? `Donate $${donationAmount}/mo × 12`
+                      ? `Donate $${donationAmount}/month × 12`
                       : `Donate $${donationAmount}`
                     : "Select an amount"}</>
                 )}
