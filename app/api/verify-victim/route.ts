@@ -27,6 +27,7 @@ interface VerificationResult {
   reason: string;
   recommendedAmount: number;
   nearestCommittee: string;
+  allocationNote?: string;
 }
 
 function haversineDistance(
@@ -77,6 +78,29 @@ const URGENCY_MULTIPLIER: Record<UrgencyLevel, number> = {
   medium: 0.75,
   high: 1.0,
   immediate: 1.5,
+};
+
+/** Country-based allocation: higher cost-of-living regions get more aid per claim */
+const COUNTRY_MULTIPLIER: Record<string, number> = {
+  default: 1.0,
+  US: 1.3,
+  JP: 1.25,
+  SG: 1.2,
+  IT: 1.15,
+  MX: 1.0,
+  TH: 0.95,
+  PH: 0.9,
+  ID: 0.9,
+  IN: 0.85,
+  BD: 0.8,
+  KE: 0.8,
+};
+
+/** Disaster severity from GDACS: Red = most severe, higher allocation */
+const GDACS_SEVERITY_MULTIPLIER: Record<string, number> = {
+  Red: 1.4,
+  Orange: 1.15,
+  Green: 1.0,
 };
 
 export async function POST(req: NextRequest) {
@@ -138,15 +162,25 @@ export async function POST(req: NextRequest) {
           : `Unable to verify disaster impact at this location.`;
     }
 
-    const nearestCountry = gdacsResult[0]?.country_iso || "default";
+    const nearestEvent = gdacsResult[0];
+    const nearestCountry = nearestEvent?.country_iso || "default";
     const committee =
       COMMITTEE_MAPPING[nearestCountry] || COMMITTEE_MAPPING.default;
 
+    // Allocate funds by disaster severity + country + injury/urgency
     const baseAmount = 500;
+    const countryMult = COUNTRY_MULTIPLIER[nearestCountry] ?? COUNTRY_MULTIPLIER.default;
+    const gdacsSeverityMult = GDACS_SEVERITY_MULTIPLIER[nearestEvent?.alertLevel || "Green"] ?? 1.0;
     const sevMult = SEVERITY_MULTIPLIER[aiResult.injurySeverity] ?? 0.5;
     const urgMult = URGENCY_MULTIPLIER[aiResult.urgencyLevel] ?? 0.75;
     const confidenceMult = Math.max(aiConfidence / 100, 0.3);
-    const recommendedAmount = Math.round(baseAmount * sevMult * urgMult * confidenceMult);
+    const recommendedAmount = Math.round(
+      baseAmount * countryMult * gdacsSeverityMult * sevMult * urgMult * confidenceMult
+    );
+
+    const allocationNote = verified
+      ? `Allocated by disaster severity (${nearestEvent?.alertLevel || "Green"}: ${(gdacsSeverityMult * 100).toFixed(0)}%) + country + injury/urgency.`
+      : undefined;
 
     const result: VerificationResult = {
       verified,
@@ -168,6 +202,7 @@ export async function POST(req: NextRequest) {
       reason,
       recommendedAmount,
       nearestCommittee: committee.name,
+      allocationNote,
     };
 
     return NextResponse.json(result);

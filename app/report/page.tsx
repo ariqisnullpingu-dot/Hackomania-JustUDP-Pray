@@ -41,6 +41,7 @@ interface VerificationResult {
   reason: string;
   recommendedAmount: number;
   nearestCommittee: string;
+  allocationNote?: string;
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -94,7 +95,7 @@ export default function ReportPage() {
     requestLocation();
   }, []);
 
-  function requestLocation() {
+  function requestLocation(useHighAccuracy = false) {
     if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by your browser.");
       return;
@@ -124,11 +125,17 @@ export default function ReportPage() {
 
         setLocationLoading(false);
       },
-      () => {
-        setLocationError("Unable to get location. Please enable location services.");
+      (err) => {
+        const msg =
+          err.code === 1
+            ? "Location denied. Allow location access in your browser, or use demo location."
+            : err.code === 2
+              ? "Location unavailable. Try demo location or check your connection."
+              : "Location timed out. Try again or use demo location.";
+        setLocationError(msg);
         setLocationLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: useHighAccuracy, timeout: 15000, maximumAge: 60000 }
     );
   }
 
@@ -275,6 +282,9 @@ export default function ReportPage() {
             <p className="mt-3 text-sm text-gray-400">
               Take a photo for AI-verified instant aid
             </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Demo: Use demo location + upload image of injured person
+            </p>
           </div>
 
           {/* Stage 1: Upload */}
@@ -321,7 +331,7 @@ export default function ReportPage() {
 
               {/* Location status */}
               <div 
-                className="flex items-center gap-3px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50"
                 style={{ margin: "0.25em" }}
               >
                 <MapPin className="w-5 h-5 text-blue-400 shrink-0" />
@@ -332,25 +342,50 @@ export default function ReportPage() {
                       <span className="text-sm text-gray-400">Getting your location...</span>
                     </div>
                   ) : location ? (
-                    <div>
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm text-gray-300">
                         {locationName || "Location captured"}
-                      </span> &nbsp;
+                      </span>
                       {locationName && (
-                        <span className="text-xs text-gray-500 ml-2">
+                        <span className="text-xs text-gray-500">
                           {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
                         </span>
                       )}
+                      <button
+                        onClick={() => {
+                          setLocation({ lat: 23.8103, lng: 90.4125 });
+                          setLocationName("Dhaka, Bangladesh (demo — near flood zone)");
+                        }}
+                        className="text-xs text-amber-400 hover:text-amber-300"
+                      >
+                        Use demo location
+                      </button>
                     </div>
                   ) : (
-                    <div>
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm text-red-400">{locationError || "Location unavailable"}</span>
                       <button
-                        onClick={requestLocation}
+                        onClick={() => requestLocation(false)}
                         className="text-sm text-blue-400 hover:text-blue-300"
-                        style={{ marginLeft: "0.25em" }}
                       >
                         Retry
+                      </button>
+                      <button
+                        onClick={() => requestLocation(true)}
+                        className="text-sm text-blue-400/80 hover:text-blue-300"
+                      >
+                        Retry (precise GPS)
+                      </button>
+                      <span className="text-gray-500">or</span>
+                      <button
+                        onClick={() => {
+                          setLocation({ lat: 23.8103, lng: 90.4125 });
+                          setLocationName("Dhaka, Bangladesh (demo — near flood zone)");
+                          setLocationError(null);
+                        }}
+                        className="text-sm text-amber-400 hover:text-amber-300"
+                      >
+                        Use demo location
                       </button>
                     </div>
                   )}
@@ -496,6 +531,11 @@ export default function ReportPage() {
                       <p className="text-sm text-gray-200 font-medium">
                         ${verifyResult.recommendedAmount.toFixed(2)} USD
                       </p>
+                      {verifyResult.allocationNote && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {verifyResult.allocationNote}
+                        </p>
+                      )}
                     </div>
                   </div>
 
