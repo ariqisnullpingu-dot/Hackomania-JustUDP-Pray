@@ -186,7 +186,7 @@ export default function DisasterPanel({
           )}
           <DetailRow
             icon={<AlertTriangle className="w-4 h-4" />}
-            label="Severity"
+            label="Severity Score"
             value={
               <div className="flex items-center gap-3 mt-1">
                 <div
@@ -196,7 +196,7 @@ export default function DisasterPanel({
                   <div
                     className="h-full rounded-full"
                     style={{
-                      width: `${Math.min((p.severity / 10) * 100, 100)}%`,
+                      width: `${Math.min((p.severity / 2.5) * 100, 100)}%`,
                       background: `linear-gradient(90deg, ${alertColor}99, ${alertColor})`,
                     }}
                   />
@@ -210,7 +210,7 @@ export default function DisasterPanel({
                     className="text-xs font-normal ml-0.5"
                     style={{ color: "rgba(147,197,253,0.35)" }}
                   >
-                    /10
+                    /3
                   </span>
                 </span>
               </div>
