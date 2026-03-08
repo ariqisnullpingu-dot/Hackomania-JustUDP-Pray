@@ -4,15 +4,11 @@ import { finalizePayment } from "@/lib/open-payments";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { continueToken, continueUri, interactRef, senderWalletUrl, quoteId } =
-            body;
+        const { continueToken, continueUri, interactRef, senderWalletUrl, quoteId, senderType } = body;
 
         if (!continueToken || !continueUri || !interactRef || !senderWalletUrl || !quoteId) {
             return NextResponse.json(
-                {
-                    error:
-                        "Missing required fields: continueToken, continueUri, interactRef, senderWalletUrl, quoteId",
-                },
+                { error: "Missing required fields: continueToken, continueUri, interactRef, senderWalletUrl, quoteId" },
                 { status: 400 }
             );
         }
@@ -22,7 +18,8 @@ export async function POST(req: NextRequest) {
             continueUri,
             interactRef,
             senderWalletUrl,
-            quoteId
+            quoteId,
+            senderType ?? "client"   // "central" for disbursements, "client" for donations
         );
 
         if (!result.success) {
@@ -38,3 +35,4 @@ export async function POST(req: NextRequest) {
         );
     }
 }
+

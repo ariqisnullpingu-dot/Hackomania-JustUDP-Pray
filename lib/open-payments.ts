@@ -211,13 +211,16 @@ export async function initiateRecurringPayment(
 export async function initiatePayment(
   recipientWalletUrl: string,
   amountDollars: number,
-  redirectUri: string = "http://localhost:3000"
+  redirectUri: string = "http://localhost:3000",
+  senderType: "client" | "central" = "client"
 ): Promise<InitiatePaymentResult> {
   try {
-    const client = await getOpenPaymentsClient("client");
+    const client = await getOpenPaymentsClient(senderType);
     const centralClient = await getOpenPaymentsClient("central");
 
-    const senderWalletUrl = process.env.CLIENT_WALLET_ADDRESS_URL!;
+    const senderWalletUrl = senderType === "central"
+      ? process.env.CENTRAL_WALLET_ADDRESS_URL!
+      : process.env.CLIENT_WALLET_ADDRESS_URL!;
 
     const [senderWallet, recipientWallet] = await Promise.all([
       client.walletAddress.get({ url: senderWalletUrl }),
@@ -358,10 +361,11 @@ export async function finalizePayment(
   continueUri: string,
   interactRef: string,
   senderWalletUrl: string,
-  quoteId: string
+  quoteId: string,
+  senderType: "client" | "central" = "client"
 ): Promise<PaymentResult> {
   try {
-    const client = await getOpenPaymentsClient();
+    const client = await getOpenPaymentsClient(senderType);
     const grant = await client.grant.continue(
       { accessToken: continueToken, url: continueUri },
       { interact_ref: interactRef }
@@ -398,5 +402,127 @@ export async function finalizePayment(
   } catch (error: any) {
     console.error("finalizePayment error:", error);
     return { success: false, error: error.message || "Failed to finalize payment." };
+  }
+}
+
+export async function sendPayment(
+  recipientWalletUrl: string,
+  amountValue: string,
+  assetCode: string,
+  assetScale: number
+): Promise<PaymentResult> {
+  try {
+    const centralClient = await getOpenPaymentsClient("central");
+    const centralWalletUrl = process.env.CENTRAL_WALLET_ADDRESS_URL!;
+
+    const [centralWallet, recipientWallet] = await Promise.all([
+      centralClient.walletAddress.get({ url: centralWalletUrl }),
+      centralClient.walletAddress.get({ url: recipientWalletUrl }),
+    ]);
+
+    const incomingGrant = await centralClient.grant.request(
+      { url: recipientWallet.authServer },
+      {
+        access_token: {
+          access: [{ type: "incoming-payment", actions: ["create", "read", "complete"] }],
+        },
+      }
+    );
+    if (isPendingGrant(incomingGrant)) {
+      return { success: false, error: "Incoming payment grant unexpectedly requires interaction." };
+    }
+
+    const incomingPayment = await centralClient.incomingPayment.create(
+      {
+        url: recipientWallet.resourceServer,
+        accessToken: incomingGrant.access_token!.value,
+      },
+      {
+        walletAddress: recipientWalletUrl,
+        incomingAmount: { value: amountValue, assetCode, assetScale },
+        expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+      }
+    );
+
+    const quoteGrant = await centralClient.grant.request(
+      { url: centralWallet.authServer },
+      {
+        access_token: {
+          access: [{ type: "quote", actions: ["create", "read"] }],
+        },
+      }
+    );
+    if (isPendingGrant(quoteGrant)) {
+      return { success: false, error: "Quote grant unexpectedly requires interaction." };
+    }
+
+    const quote = await centralClient.quote.create(
+      {
+        url: centralWallet.resourceServer,
+        accessToken: quoteGrant.access_token!.value,
+      },
+      {
+        walletAddress: centralWalletUrl,
+        receiver: incomingPayment.id,
+        method: "ilp",
+      }
+    );
+
+    const outgoingGrant = await centralClient.grant.request(
+      { url: centralWallet.authServer },
+      {
+        access_token: {
+          access: [
+            {
+              identifier: centralWallet.id,
+              type: "outgoing-payment",
+              actions: ["create", "read"],
+              limits: {
+                debitAmount: {
+                  value: quote.debitAmount.value,
+                  assetCode: quote.debitAmount.assetCode,
+                  assetScale: quote.debitAmount.assetScale,
+                },
+              },
+            },
+          ],
+        },
+      }
+    );
+
+    if (isPendingGrant(outgoingGrant)) {
+      return {
+        success: false,
+        error:
+          "Outgoing payment grant requires interaction — test wallet may not support non-interactive outgoing grants for the central wallet.",
+      };
+    }
+
+    if (!isFinalizedGrant(outgoingGrant) || !outgoingGrant.access_token) {
+      return { success: false, error: "Unexpected grant state for disbursement." };
+    }
+
+    const outgoingPayment = await centralClient.outgoingPayment.create(
+      {
+        url: centralWallet.resourceServer,
+        accessToken: outgoingGrant.access_token.value,
+      },
+      { walletAddress: centralWalletUrl, quoteId: quote.id }
+    );
+
+    const sent = outgoingPayment.sentAmount;
+    const displayAmount = sent
+      ? `${(parseInt(sent.value) / Math.pow(10, sent.assetScale)).toFixed(sent.assetScale)} ${sent.assetCode}`
+      : undefined;
+
+    return {
+      success: true,
+      transactionId: outgoingPayment.id,
+      amount: displayAmount,
+      currency: sent?.assetCode,
+    };
+  } catch (error: any) {
+    console.error("sendPayment error:", error);
+    return { success: false, error: error.message || "Failed to send payment." };
   }
 }

@@ -37,6 +37,7 @@ export default function PaymentCallbackPage() {
 
         const storedAmount = localStorage.getItem("op_amount");
         const isRecurring = localStorage.getItem("op_isRecurring") === "1";
+        const senderType = localStorage.getItem("op_senderType") ?? "client";
 
         localStorage.removeItem("op_continueToken");
         localStorage.removeItem("op_continueUri");
@@ -45,11 +46,12 @@ export default function PaymentCallbackPage() {
         localStorage.removeItem("op_disasterName");
         localStorage.removeItem("op_amount");
         localStorage.removeItem("op_isRecurring");
+        localStorage.removeItem("op_senderType");
 
         fetch("/api/payment/finalize", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ continueToken, continueUri, interactRef, senderWalletUrl, quoteId }),
+            body: JSON.stringify({ continueToken, continueUri, interactRef, senderWalletUrl, quoteId, senderType }),
         })
             .then((res) => res.json())
             .then((data) => {

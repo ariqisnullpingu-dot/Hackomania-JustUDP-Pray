@@ -1,19 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendPayment, type PaymentResult } from "@/lib/open-payments";
-
-const COMMITTEE_WALLETS: Record<string, string> = {
-  "International Disaster Relief Fund": "https://ilp.interledger-test.dev/disaster-relief",
-  "Japan Red Cross Society": "https://ilp.interledger-test.dev/jp-relief",
-  "American Red Cross": "https://ilp.interledger-test.dev/us-relief",
-  "Philippine Red Cross": "https://ilp.interledger-test.dev/ph-relief",
-  "Bangladesh Red Crescent Society": "https://ilp.interledger-test.dev/bd-relief",
-  "Mexican Red Cross": "https://ilp.interledger-test.dev/mx-relief",
-  "Indonesian Red Cross": "https://ilp.interledger-test.dev/id-relief",
-  "Indian Red Cross Society": "https://ilp.interledger-test.dev/in-relief",
-  "Thai Red Cross Society": "https://ilp.interledger-test.dev/th-relief",
-  "Kenya Red Cross Society": "https://ilp.interledger-test.dev/ke-relief",
-  "Italian Red Cross": "https://ilp.interledger-test.dev/it-relief",
-};
+import { initiatePayment } from "@/lib/open-payments";
 
 interface DisburseRequest {
   committee: string;
@@ -22,48 +8,44 @@ interface DisburseRequest {
   confidence: number;
   latitude: number;
   longitude: number;
+  redirectUri?: string;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body: DisburseRequest = await req.json();
-    const { committee, amount, disasterType, confidence, latitude, longitude } = body;
+    const { committee, amount, disasterType, confidence, latitude, longitude, redirectUri } = body;
 
     if (!committee || !amount || amount <= 0) {
-      return NextResponse.json(
-        { error: "Invalid disbursement request" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid disbursement request" }, { status: 400 });
     }
 
-    const walletUrl =
-      COMMITTEE_WALLETS[committee] || COMMITTEE_WALLETS["International Disaster Relief Fund"];
+    const recipientWalletUrl = process.env.CLIENT_WALLET_ADDRESS_URL;
+    if (!recipientWalletUrl) {
+      return NextResponse.json({ error: "CLIENT_WALLET_ADDRESS_URL is not configured" }, { status: 500 });
+    }
 
-    const amountInCents = String(Math.round(amount * 100));
+    const appUrl = process.env.APP_URL || "http://localhost:3000";
+    const callbackUri = redirectUri || `${appUrl}/payment/callback`;
 
-    let result: PaymentResult;
+    // Central wallet initiates the payment to the client wallet.
+    // Uses the same interactive grant flow as a regular donation —
+    // the admin approves the disbursement in the central wallet UI.
+    const result = await initiatePayment(
+      recipientWalletUrl,
+      amount,
+      callbackUri,
+      "central"   // ← sender is the central wallet
+    );
 
-    const hasOpenPaymentsConfig =
-      process.env.OP_WALLET_ADDRESS &&
-      process.env.OP_PRIVATE_KEY &&
-      process.env.OP_KEY_ID;
-
-    if (hasOpenPaymentsConfig) {
-      result = await sendPayment(walletUrl, amountInCents, "USD", 2);
-    } else {
-      await new Promise((r) => setTimeout(r, 1500));
-      result = {
-        success: true,
-        transactionId: `demo-txn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        amount: `$${amount.toFixed(2)} USD`,
-        currency: "USD",
-      };
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
     return NextResponse.json({
       ...result,
       committee,
-      recipientWallet: walletUrl,
+      recipientWallet: recipientWalletUrl,
       disasterType,
       confidence,
       location: { latitude, longitude },
@@ -71,9 +53,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("Disbursement error:", error);
-    return NextResponse.json(
-      { error: error.message || "Disbursement failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || "Disbursement failed" }, { status: 500 });
   }
 }

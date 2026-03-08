@@ -225,6 +225,7 @@ export default function ReportPage() {
     setDisbursing(true);
 
     try {
+      const appUrl = window.location.origin;
       const res = await fetch("/api/disburse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -235,11 +236,28 @@ export default function ReportPage() {
           confidence: verifyResult.confidence,
           latitude: location.lat,
           longitude: location.lng,
+          redirectUri: `${appUrl}/payment/callback`,
         }),
       });
 
-      const result: DisbursementResult = await res.json();
-      setDisburseResult(result);
+      const result = await res.json();
+
+      if (result.error) throw new Error(result.error);
+
+      if (result.approvalUrl) {
+        // Same interactive grant flow as donations — save state then redirect
+        localStorage.setItem("op_continueToken", result.continueToken);
+        localStorage.setItem("op_continueUri", result.continueUri);
+        localStorage.setItem("op_quoteId", result.quoteId);
+        localStorage.setItem("op_senderWalletUrl", result.senderWalletUrl);
+        localStorage.setItem("op_senderType", "central");
+        localStorage.setItem("op_amount", String(verifyResult.recommendedAmount));
+        window.location.href = result.approvalUrl;
+        return;
+      }
+
+      // Immediate success (unlikely with test wallet but handle it)
+      setDisburseResult({ success: true, committee: verifyResult.nearestCommittee, timestamp: new Date().toISOString(), transactionId: result.transactionId, amount: result.amount });
     } catch (err: any) {
       setDisburseResult({
         success: false,
@@ -306,7 +324,7 @@ export default function ReportPage() {
                       className="w-full max-h-72 object-contain bg-black"
                     />
                   )}
-                  <div 
+                  <div
                     className="px-4 py-2.5 border-t border-gray-700/50 flex items-center justify-between"
                     style={{ padding: "0.5em" }}
                   >
@@ -330,7 +348,7 @@ export default function ReportPage() {
               )}
 
               {/* Location status */}
-              <div 
+              <div
                 className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-800/50"
                 style={{ margin: "0.25em" }}
               >
@@ -670,7 +688,7 @@ function DetailRow({
   value: string;
 }) {
   return (
-    <div 
+    <div
       className="flex items-start gap-3 px-4 py-3 rounded-xl bg-gray-900/30 border border-gray-800/30"
       style={{ padding: "0.35em 0.5em" }}
     >
